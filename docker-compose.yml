@@ -1,0 +1,18 @@
+version: '3.7'
+services:
+  golang:
+    container_name: go-course-demo
+    env_file:
+      - .env
+    build:
+      context: .
+    image: golang:go-course-demo
+    command: go run app/main.go
+    restart: always
+    networks:
+      - web
+    ports:
+    - "3000:3000"
+
+networks:
+  web:
