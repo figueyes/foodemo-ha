@@ -1,6 +1,6 @@
 package web_model
 
-type foo_web_model struct {
+type FooWebModel struct {
 	Id      string `json:"id"`
 	Message string `json:"message"`
 }
