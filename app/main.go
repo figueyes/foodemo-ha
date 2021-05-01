@@ -35,7 +35,7 @@ func main() {
 
 	// mongo
 	connection := mongo.CreateDbConnection()
-	fooMongo := mongoRepository.NewMongoRepository("foo",connection)
+	fooMongo := mongoRepository.NewMongoRepository("foo", connection)
 	fooRepository := repository.NewFooMongoRepository(fooMongo)
 
 	// postgres
@@ -46,10 +46,11 @@ func main() {
 
 	fooUseCase := queue_usecases.NewFooSubscriberUseCase(fooRepository)
 	fooListAllUseCase := usecases.NewFooListAllUseCase(fooRepository)
+	fooPageableListAllUseCase := usecases.NewFooPageableListAllUseCase(fooRepository)
 	fooSubscriber := kafka.NewKafkaSubscriber(fooUseCase, _groupId, kafka_dialer.GetDialer(), _kafkaBrokers)
 	log.Info("listening queues...")
 	go fooSubscriber.Subscribe(os.Getenv(constants.TOPIC_DEMO))
-	controllers.NewFooHandler(echoServer, fooListAllUseCase)
+	controllers.NewFooHandler(echoServer, fooListAllUseCase, fooPageableListAllUseCase)
 	version.NewHealthHandler(echoServer, _version)
 	log.Info("Starting echoServer...")
 	portServer := os.Getenv(constants.PORT_SERVER)

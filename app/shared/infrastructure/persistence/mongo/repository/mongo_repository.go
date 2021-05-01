@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"os"
 )
 
@@ -16,9 +17,9 @@ var (
 )
 
 type MongoRepository struct {
-	collectionName string
-	connection     *config.DbConnection
-	mongoCollection     *mongo.Collection
+	collectionName  string
+	connection      *config.DbConnection
+	mongoCollection *mongo.Collection
 }
 
 type OptionsRepository struct {
@@ -71,6 +72,27 @@ func (b *MongoRepository) FindOne(query interface{}) (interface{}, error) {
 		return nil, err
 	}
 	return entity, nil
+}
+func (b *MongoRepository) FindPageable(limit, page int64, query interface{}) ([]interface{}, error) {
+	opts := options.Find()
+	skip := (page - 1) * limit
+	opts.Skip = &skip
+	opts.Limit = &limit
+	cursor, err := b.mongoCollection.Find(ctx, query, opts)
+	if err != nil {
+		return nil, err
+	}
+	var response []interface{}
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var c map[string]interface{}
+		err := cursor.Decode(&c)
+		if err != nil {
+			return nil, err
+		}
+		response = append(response, c)
+	}
+	return response, nil
 }
 
 func (b *MongoRepository) Save(body interface{}) (string, error) {
