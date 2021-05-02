@@ -3,8 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
-	echoMiddleware "github.com/labstack/echo/v4/middleware"
-	echoSwagger "github.com/swaggo/echo-swagger"
+	"github.com/labstack/echo/v4/middleware"
 	"go-course/demo/app/foo/application/usecases"
 	"go-course/demo/app/foo/application/usecases/queue_usecases"
 	"go-course/demo/app/foo/infrastructure/controllers"
@@ -15,6 +14,7 @@ import (
 	"go-course/demo/app/shared/infrastructure/queue/kafka"
 	"go-course/demo/app/shared/infrastructure/queue/kafka/config"
 	"go-course/demo/app/shared/log"
+	"go-course/demo/app/shared/utils"
 	"go-course/demo/app/version"
 	"net/http"
 	"os"
@@ -26,27 +26,16 @@ var (
 	_groupId      = os.Getenv(constants.KAFKA_GROUP_ID)
 	_kafkaBrokers = os.Getenv(constants.KAFKA_BROKERS)
 )
-// @title Foo API
-// @version 1.0
-// @description API for Golang Project Foo.
-// @termsOfService http://swagger.io/terms/
 
-// @contact.name API Support
-// @contact.email aofiguer@uc.cl
-
-// @license.name MIT
-// @license.url http://google.com
-
-// @BasePath /api/v1
 func main() {
 	if os.Getenv(constants.ENVIRONMENT_TYPE) == "local" {
-		//utils.GetEnvironments()
+		utils.GetEnvironments()
 	}
 	log.Info("starting app %s", constants.APP)
 	echoServer := echo.New()
-	echoServer.Use(echoMiddleware.Recover())
-	echoServer.Use(echoMiddleware.CORS())
 	echoServer.HideBanner = true
+	echoServer.Use(middleware.Recover())
+	echoServer.Use(middleware.CORS())
 
 	// mongo
 	connection := mongo.CreateDbConnection()
@@ -63,13 +52,12 @@ func main() {
 	fooListAllUseCase := usecases.NewFooListAllUseCase(fooRepository)
 	fooPageableListAllUseCase := usecases.NewFooPageableListAllUseCase(fooRepository)
 	fooSubscriber := kafka.NewKafkaSubscriber(fooUseCase, _groupId, kafka_dialer.GetDialer(), _kafkaBrokers)
+
 	log.Info("listening queues...")
 	go fooSubscriber.Subscribe(os.Getenv(constants.TOPIC_DEMO))
 
 	controllers.NewFooHandler(echoServer, fooListAllUseCase, fooPageableListAllUseCase)
 	version.NewHealthHandler(echoServer, _version)
-
-	echoServer.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	log.Info("Starting echoServer...")
 	portServer := os.Getenv(constants.PORT_SERVER)
