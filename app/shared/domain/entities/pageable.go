@@ -1,4 +1,4 @@
-package shared
+package entities
 
 type Pageable struct {
 	Total int         `json:"total"`
