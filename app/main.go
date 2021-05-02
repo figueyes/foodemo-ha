@@ -3,16 +3,18 @@ package main
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"go-course/demo/app/foo/application/usecases"
 	"go-course/demo/app/foo/application/usecases/queue_usecases"
 	"go-course/demo/app/foo/infrastructure/controllers"
-	repository "go-course/demo/app/foo/infrastructure/persistence/mongo/repository"
+	"go-course/demo/app/foo/infrastructure/persistence/mongo/repository"
 	"go-course/demo/app/shared/domain/constants"
 	"go-course/demo/app/shared/infrastructure/persistence/mongo"
 	mongoRepository "go-course/demo/app/shared/infrastructure/persistence/mongo/repository"
 	"go-course/demo/app/shared/infrastructure/queue/kafka"
 	"go-course/demo/app/shared/infrastructure/queue/kafka/config"
 	"go-course/demo/app/shared/log"
+	"go-course/demo/app/shared/utils"
 	"go-course/demo/app/version"
 	"net/http"
 	"os"
@@ -27,11 +29,13 @@ var (
 
 func main() {
 	if os.Getenv(constants.ENVIRONMENT_TYPE) == "local" {
-		//utils.GetEnvironments()
+		utils.GetEnvironments()
 	}
 	log.Info("starting app %s", constants.APP)
 	echoServer := echo.New()
 	echoServer.HideBanner = true
+	echoServer.Use(middleware.Recover())
+	echoServer.Use(middleware.CORS())
 
 	// mongo
 	connection := mongo.CreateDbConnection()
@@ -48,10 +52,13 @@ func main() {
 	fooListAllUseCase := usecases.NewFooListAllUseCase(fooRepository)
 	fooPageableListAllUseCase := usecases.NewFooPageableListAllUseCase(fooRepository)
 	fooSubscriber := kafka.NewKafkaSubscriber(fooUseCase, _groupId, kafka_dialer.GetDialer(), _kafkaBrokers)
+
 	log.Info("listening queues...")
 	go fooSubscriber.Subscribe(os.Getenv(constants.TOPIC_DEMO))
+
 	controllers.NewFooHandler(echoServer, fooListAllUseCase, fooPageableListAllUseCase)
 	version.NewHealthHandler(echoServer, _version)
+
 	log.Info("Starting echoServer...")
 	portServer := os.Getenv(constants.PORT_SERVER)
 	server := &http.Server{
