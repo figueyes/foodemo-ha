@@ -3,7 +3,7 @@ package repository
 import (
 	"go-course/demo/app/foo/domain/entities"
 	"go-course/demo/app/foo/infrastructure/persistence/mongo/model"
-	shared "go-course/demo/app/shared/domain/shared"
+	shared "go-course/demo/app/shared/domain/entities"
 	"go-course/demo/app/shared/infrastructure/persistence/mongo/repository"
 	"go-course/demo/app/shared/log"
 	"go-course/demo/app/shared/utils"

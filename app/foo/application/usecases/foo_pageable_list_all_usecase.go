@@ -1,13 +1,13 @@
 package usecases
 
 import (
-	"go-course/demo/app/shared/domain/shared"
+	"go-course/demo/app/shared/domain/entities"
 	"go-course/demo/app/shared/domain/repositories"
 	"go-course/demo/app/shared/log"
 )
 
 type FooPageableListAllUseCase interface {
-	ListPageable(limit, skip int64, query interface{}) (*shared.Pageable, error)
+	ListPageable(limit, skip int64, query interface{}) (*entities.Pageable, error)
 }
 
 type fooPageableListAllUseCase struct {
@@ -20,7 +20,7 @@ func NewFooPageableListAllUseCase(repository repositories.PageableRepository) *f
 	}
 }
 
-func (f *fooPageableListAllUseCase) ListPageable(limit, skip int64, query interface{}) (*shared.Pageable, error) {
+func (f *fooPageableListAllUseCase) ListPageable(limit, skip int64, query interface{}) (*entities.Pageable, error) {
 	list, err := f.repository.FindPageable(limit, skip, query)
 	if err != nil {
 		log.WithError(err).Info("error trying to find in database")
